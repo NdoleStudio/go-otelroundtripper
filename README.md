@@ -1,35 +1,30 @@
-# go-http-client
+# go-otelroundtripper
 
-[![Build](https://github.com/NdoleStudio/go-http-client/actions/workflows/main.yml/badge.svg)](https://github.com/NdoleStudio/go-http-client/actions/workflows/main.yml)
-[![codecov](https://codecov.io/gh/NdoleStudio/go-http-client/branch/main/graph/badge.svg)](https://codecov.io/gh/NdoleStudio/go-http-client)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/NdoleStudio/go-http-client/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/NdoleStudio/go-http-client/?branch=main)
-[![Go Report Card](https://goreportcard.com/badge/github.com/NdoleStudio/go-http-client)](https://goreportcard.com/report/github.com/NdoleStudio/go-http-client)
-[![GitHub contributors](https://img.shields.io/github/contributors/NdoleStudio/go-http-client)](https://github.com/NdoleStudio/go-http-client/graphs/contributors)
-[![GitHub license](https://img.shields.io/github/license/NdoleStudio/go-http-client?color=brightgreen)](https://github.com/NdoleStudio/go-http-client/blob/master/LICENSE)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/NdoleStudio/go-http-client)](https://pkg.go.dev/github.com/NdoleStudio/go-http-client)
+[![Build](https://github.com/NdoleStudio/go-otelroundtripper/actions/workflows/main.yml/badge.svg)](https://github.com/NdoleStudio/go-otelroundtripper/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/NdoleStudio/go-otelroundtripper/branch/main/graph/badge.svg)](https://codecov.io/gh/NdoleStudio/go-otelroundtripper)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/NdoleStudio/go-otelroundtripper/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/NdoleStudio/go-otelroundtripper/?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/NdoleStudio/go-otelroundtripper)](https://goreportcard.com/report/github.com/NdoleStudio/go-otelroundtripper)
+[![GitHub contributors](https://img.shields.io/github/contributors/NdoleStudio/go-otelroundtripper)](https://github.com/NdoleStudio/go-otelroundtripper/graphs/contributors)
+[![GitHub license](https://img.shields.io/github/license/NdoleStudio/go-otelroundtripper?color=brightgreen)](https://github.com/NdoleStudio/go-otelroundtripper/blob/master/LICENSE)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/NdoleStudio/go-otelroundtripper)](https://pkg.go.dev/github.com/NdoleStudio/go-otelroundtripper)
 
 
-This package provides a generic `go` client template for an HTTP API
+This package provides an easy way to collect http related metrics(e.g Response times, Status Codes, Number of inflight requests etc) for your HTTP API Clients.
+You can do this by passing in this round tripper when instantiating the `http.CLient{}`.
 
 ## Installation
 
-`go-http-client` is compatible with modern Go releases in module mode, with Go installed:
+`go-otelroundtripper` is compatible with modern Go releases in module mode, with Go installed:
 
 ```bash
-go get github.com/NdoleStudio/go-http-client
+go get github.com/NdoleStudio/go-otelroundtripper
 ```
 
 Alternatively the same can be achieved if you use `import` in a package:
 
 ```go
-import "github.com/NdoleStudio/go-http-client"
+import "github.com/NdoleStudio/go-otelroundtripper"
 ```
-
-
-## Implemented
-
-- [Status Codes](#status-codes)
-    - `GET /200`: OK
 
 ## Usage
 
@@ -41,37 +36,12 @@ An instance of the client can be created using `New()`.
 package main
 
 import (
-	"github.com/NdoleStudio/go-http-client"
+	"github.com/NdoleStudio/go-otelroundtripper"
 )
 
 func main()  {
 	statusClient := client.New(client.WithDelay(200))
 }
-```
-
-### Error handling
-
-All API calls return an `error` as the last return object. All successful calls will return a `nil` error.
-
-```go
-status, response, err := statusClient.Status.Ok(context.Background())
-if err != nil {
-    //handle error
-}
-```
-
-### Status Codes
-
-#### `GET /200`: OK
-
-```go
-status, response, err := statusClient.Status.Ok(context.Background())
-
-if err != nil {
-    log.Fatal(err)
-}
-
-log.Println(status.Description) // OK
 ```
 
 ## Testing
