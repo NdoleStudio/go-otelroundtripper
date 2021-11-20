@@ -17,7 +17,7 @@ func TestWithParent(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		cfg := defaultConfig
+		cfg := defaultConfig()
 
 		// Act
 		WithParent(nil).apply(cfg)
@@ -31,7 +31,7 @@ func TestWithParent(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		cfg := defaultConfig
+		cfg := defaultConfig()
 		parent := &http.Transport{}
 
 		// Act
@@ -49,7 +49,7 @@ func TestWithName(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		cfg := defaultConfig
+		cfg := defaultConfig()
 
 		// Act
 		WithName("   ").apply(cfg)
@@ -63,7 +63,7 @@ func TestWithName(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		cfg := defaultConfig
+		cfg := defaultConfig()
 		name := " name "
 
 		// Act
@@ -80,7 +80,7 @@ func TestWithMeter(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		cfg := defaultConfig
+		cfg := defaultConfig()
 		meter := metric.Meter{}
 
 		// Act
@@ -97,7 +97,7 @@ func TestWithAttributes(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		cfg := defaultConfig
+		cfg := defaultConfig()
 		attributes := []attribute.KeyValue{
 			semconv.ServiceNamespaceKey.String("namespace"),
 			semconv.ServiceInstanceIDKey.Int(1),

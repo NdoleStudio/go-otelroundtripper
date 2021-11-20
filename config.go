@@ -14,7 +14,9 @@ type config struct {
 	attributes []attribute.KeyValue
 }
 
-var defaultConfig = &config{
-	name:   "http.client",
-	parent: http.DefaultTransport,
+func defaultConfig() *config {
+	return &config{
+		name:   "http.client",
+		parent: http.DefaultTransport,
+	}
 }

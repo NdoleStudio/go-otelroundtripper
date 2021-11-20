@@ -36,7 +36,7 @@ type otelRoundTripper struct {
 
 // New creates a new instance of the http.RoundTripper
 func New(options ...Option) http.RoundTripper {
-	cfg := defaultConfig
+	cfg := defaultConfig()
 
 	for _, option := range options {
 		option.apply(cfg)
