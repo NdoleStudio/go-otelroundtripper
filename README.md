@@ -28,19 +28,71 @@ import "github.com/NdoleStudio/go-otelroundtripper"
 
 ## Usage
 
-### Initializing the Client
+### Using the RoundTripper
 
-An instance of the client can be created using `New()`.
+This is a sample application that instantiates an http client which sends requests to `https://httpstat.us`.
+The open telemetry metrics will be exported to stdout.
 
 ```go
-package main
+func InstallExportPipeline(ctx context.Context) func() {
+	exporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
+	if err != nil {
+		log.Fatalf("creating stdoutmetric exporter: %v", err)
+	}
 
-import (
-	"github.com/NdoleStudio/go-otelroundtripper"
-)
+	pusher := controller.New(
+		processor.NewFactory(
+			simple.NewWithInexpensiveDistribution(),
+			exporter,
+		),
+		controller.WithExporter(exporter),
+	)
 
-func main()  {
-	statusClient := client.New(client.WithDelay(200))
+	if err = pusher.Start(ctx); err != nil {
+		log.Fatalf("starting push controller: %v", err)
+	}
+
+	global.SetMeterProvider(pusher)
+
+	return func() {
+		if err := pusher.Stop(ctx); err != nil {
+			log.Fatalf("stopping push controller: %v", err)
+		}
+	}
+}
+
+
+func main() {
+	ctx := context.Background()
+
+	// Registers a meter Provider globally.
+	cleanup := InstallExportPipeline(ctx)
+	defer cleanup()
+
+	client := http.Client{
+		Transport: New(
+			WithMeter(global.Meter("otel-round-tripper")),
+			WithAttributes(
+				semconv.ServiceNameKey.String("otel-round-tripper"),
+			),
+		),
+	}
+
+	// Here we are using the http client created above perform 10 http requests to
+	// https://httpstat.us/200. The metrics will be exported to the console.
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < 10; i++ {
+		// Add a random sleep duration so as not to DDOS the https://httstat.us website
+		url := "https://httpstat.us/200?sleep=" + strconv.Itoa(rand.Intn(1000) + 1000)
+
+		log.Printf("GET: %s", url)
+		response, err := client.Get(url)
+		if err != nil {
+			log.Panicf("cannot perform http request: %v", err)
+		}
+
+		_ = response.Body.Close()
+	}
 }
 ```
 
