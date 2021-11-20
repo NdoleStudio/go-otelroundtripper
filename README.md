@@ -41,6 +41,7 @@ You can see a runnable [example here](./example_test.go)
 ```go
 client := http.Client{
     Transport: New(
+		WithName("example.com")
         WithMeter(global.Meter("otel-round-tripper")),
         WithAttributes(
             semconv.ServiceNameKey.String("otel-round-tripper"),
@@ -50,6 +51,22 @@ client := http.Client{
 
 resposne, err := client.Get("https://example.com")
 ```
+
+## Metrics Emitted
+
+The following metrics will be emitted by this package. Note that `*` will be replaced by the prefix passed in `WithName()`.
+
+- `*.no_reqeusts` http calls with nil `http.Request`
+- `*.errors` http requests which had an error response i.e `err != nil`
+- `*.success` http requests which were successfull. Meaning there were no transport errors
+- `*.timeouts` http requests which timed out
+- `*.cancelled` http requests with cancelled context
+- `*.deadline_exceeded` http requests with context dateline exceeded
+- `*.total_duration` total time it takes to execute the http request in milliseconds
+- `*.in_flight` concurrent http requests
+- `*.attempts` http requests attempted
+- `*.failures` http requests with  http status code >= 400
+- `*.redirects`  http requests with  300 <= http status code < 400
 
 ## Testing
 
