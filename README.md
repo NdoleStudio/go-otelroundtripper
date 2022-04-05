@@ -42,7 +42,7 @@ You can see a runnable [example here](./example_test.go)
 client := http.Client{
     Transport: New(
 		WithName("example.com")
-        WithMeter(global.Meter("otel-round-tripper")),
+        WithMeter(global.MeterProvider()Meter("otel-round-tripper")),
         WithAttributes(
             semconv.ServiceNameKey.String("otel-round-tripper"),
         ),

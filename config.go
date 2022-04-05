@@ -5,6 +5,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/global"
 )
 
 type config struct {
@@ -18,5 +19,6 @@ func defaultConfig() *config {
 	return &config{
 		name:   "http.client",
 		parent: http.DefaultTransport,
+		meter:  global.MeterProvider().Meter("http.client"),
 	}
 }
