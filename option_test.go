@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/nonrecording"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	"github.com/stretchr/testify/assert"
@@ -81,7 +81,7 @@ func TestWithMeter(t *testing.T) {
 
 		// Arrange
 		cfg := defaultConfig()
-		meter := metric.Meter{}
+		meter := nonrecording.NewNoopMeter()
 
 		// Act
 		WithMeter(meter).apply(cfg)

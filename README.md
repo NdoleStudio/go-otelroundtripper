@@ -11,7 +11,7 @@
 
 This package provides an easy way to collect http related metrics
 (e.g Response times, Status Codes, number of in flight requests etc) for your HTTP API Clients.
-You can do this by using this round tripper when instantiating the `http.CLient{}`.
+You can do this by using this round tripper when instantiating the `http.Client{}`.
 
 ## Why this package exists
 
@@ -42,21 +42,21 @@ You can see a runnable [example here](./example_test.go)
 client := http.Client{
     Transport: New(
 		WithName("example.com")
-        WithMeter(global.Meter("otel-round-tripper")),
+        WithMeter(global.MeterProvider()Meter("otel-round-tripper")),
         WithAttributes(
             semconv.ServiceNameKey.String("otel-round-tripper"),
         ),
     ),
 }
 
-resposne, err := client.Get("https://example.com")
+response, err := client.Get("https://example.com")
 ```
 
 ## Metrics Emitted
 
 The following metrics will be emitted by this package. Note that `*` will be replaced by the prefix passed in `WithName()`.
 
-- `*.no_reqeusts` http calls with nil `http.Request`
+- `*.no_request` http calls with nil `http.Request`
 - `*.errors` http requests which had an error response i.e `err != nil`
 - `*.success` http requests which were successfull. Meaning there were no transport errors
 - `*.timeouts` http requests which timed out

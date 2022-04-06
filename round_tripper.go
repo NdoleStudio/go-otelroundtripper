@@ -9,22 +9,22 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
 type otelHTTPMetrics struct {
-	attemptsCounter         metric.Int64Counter
-	noRequestCounter        metric.Int64Counter
-	errorsCounter           metric.Int64Counter
-	successesCounter        metric.Int64Counter
-	failureCounter          metric.Int64Counter
-	redirectCounter         metric.Int64Counter
-	timeoutsCounter         metric.Int64Counter
-	canceledCounter         metric.Int64Counter
-	deadlineExceededCounter metric.Int64Counter
-	totalDurationCounter    metric.Int64Histogram
-	inFlightCounter         metric.Int64UpDownCounter
+	attemptsCounter         syncint64.Counter
+	noRequestCounter        syncint64.Counter
+	errorsCounter           syncint64.Counter
+	successesCounter        syncint64.Counter
+	failureCounter          syncint64.Counter
+	redirectCounter         syncint64.Counter
+	timeoutsCounter         syncint64.Counter
+	canceledCounter         syncint64.Counter
+	deadlineExceededCounter syncint64.Counter
+	totalDurationCounter    syncint64.Histogram
+	inFlightCounter         syncint64.UpDownCounter
 }
 
 // otelRoundTripper is the http.RoundTripper which emits open telemetry metrics
@@ -46,19 +46,40 @@ func New(options ...Option) http.RoundTripper {
 		parent:     cfg.parent,
 		attributes: cfg.attributes,
 		metrics: otelHTTPMetrics{
-			noRequestCounter:        metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".no_request"),
-			errorsCounter:           metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".errors"),
-			successesCounter:        metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".success"),
-			timeoutsCounter:         metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".timeouts"),
-			canceledCounter:         metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".cancelled"),
-			deadlineExceededCounter: metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".deadline_exceeded"),
-			totalDurationCounter:    metric.Must(cfg.meter).NewInt64Histogram(cfg.name + ".total_duration"),
-			inFlightCounter:         metric.Must(cfg.meter).NewInt64UpDownCounter(cfg.name + ".in_flight"),
-			attemptsCounter:         metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".attempts"),
-			failureCounter:          metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".failures"),
-			redirectCounter:         metric.Must(cfg.meter).NewInt64Counter(cfg.name + ".redirects"),
+			noRequestCounter:        mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".no_request")),
+			errorsCounter:           mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".errors")),
+			successesCounter:        mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".success")),
+			timeoutsCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".timeouts")),
+			canceledCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".cancelled")),
+			deadlineExceededCounter: mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".deadline_exceeded")),
+			totalDurationCounter:    mustHistogram(cfg.meter.SyncInt64().Histogram(cfg.name + ".total_duration")),
+			inFlightCounter:         mustUpDownCounter(cfg.meter.SyncInt64().UpDownCounter(cfg.name + ".in_flight")),
+			attemptsCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".attempts")),
+			failureCounter:          mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".failures")),
+			redirectCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".redirects")),
 		},
 	}
+}
+
+func mustCounter(counter syncint64.Counter, err error) syncint64.Counter {
+	if err != nil {
+		panic(err)
+	}
+	return counter
+}
+
+func mustUpDownCounter(counter syncint64.UpDownCounter, err error) syncint64.UpDownCounter {
+	if err != nil {
+		panic(err)
+	}
+	return counter
+}
+
+func mustHistogram(histogram syncint64.Histogram, err error) syncint64.Histogram {
+	if err != nil {
+		panic(err)
+	}
+	return histogram
 }
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.

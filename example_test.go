@@ -52,7 +52,7 @@ func Example() {
 
 	client := http.Client{
 		Transport: New(
-			WithMeter(global.Meter("otel-round-tripper")),
+			WithMeter(global.MeterProvider().Meter("otel-round-tripper")),
 			WithAttributes(
 				semconv.ServiceNameKey.String("otel-round-tripper"),
 			),

@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/nonrecording"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 		roundTripper := New(
 			WithName("name"),
 			WithParent(http.DefaultTransport),
-			WithMeter(metric.Meter{}),
+			WithMeter(nonrecording.NewNoopMeter()),
 			WithAttributes([]attribute.KeyValue{semconv.ServiceNameKey.String("service")}...),
 		)
 		assert.NotNil(t, roundTripper)
