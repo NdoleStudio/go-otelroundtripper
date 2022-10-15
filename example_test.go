@@ -2,43 +2,39 @@ package otelroundtripper
 
 import (
 	"context"
+	"encoding/json"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric/global"
-	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
-	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
-	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
 func InstallExportPipeline(ctx context.Context) func() {
-	exporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
+	// Print with a JSON encoder that indents with two spaces.
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	exporter, err := stdoutmetric.New(stdoutmetric.WithEncoder(enc))
 	if err != nil {
 		log.Fatalf("creating stdoutmetric exporter: %v", err)
 	}
 
-	pusher := controller.New(
-		processor.NewFactory(
-			simple.NewWithInexpensiveDistribution(),
-			exporter,
-		),
-		controller.WithExporter(exporter),
+	// Register the exporter with an SDK via a periodic reader.
+	sdk := metric.NewMeterProvider(
+		metric.WithReader(metric.NewPeriodicReader(exporter)),
 	)
 
-	if err = pusher.Start(ctx); err != nil {
-		log.Fatalf("starting push controller: %v", err)
-	}
-
-	global.SetMeterProvider(pusher)
+	global.SetMeterProvider(sdk)
 
 	return func() {
-		if err := pusher.Stop(ctx); err != nil {
-			log.Fatalf("stopping push controller: %v", err)
+		if err := sdk.Shutdown(ctx); err != nil {
+			log.Fatalf("stopping sdk: %v", err)
 		}
 	}
 }

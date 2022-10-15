@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
 func TestNew(t *testing.T) {
