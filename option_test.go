@@ -1,11 +1,11 @@
 package otelroundtripper
 
 import (
+	"go.opentelemetry.io/otel/metric"
 	"net/http"
 	"testing"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/nonrecording"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	"github.com/stretchr/testify/assert"
@@ -81,7 +81,7 @@ func TestWithMeter(t *testing.T) {
 
 		// Arrange
 		cfg := defaultConfig()
-		meter := nonrecording.NewNoopMeter()
+		meter := metric.NewNoopMeter()
 
 		// Act
 		WithMeter(meter).apply(cfg)
