@@ -5,7 +5,7 @@ import (
 	"errors"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -54,7 +54,7 @@ func TestOtelRoundTripper_RoundTrip(t *testing.T) {
 
 	defer func() { _ = response.Body.Close() }()
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	assert.Nil(t, err)
 
 	assert.Equal(t, http.StatusText(http.StatusOK), string(body))
