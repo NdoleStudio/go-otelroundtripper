@@ -1,12 +1,13 @@
 package otelroundtripper
 
 import (
-	"go.opentelemetry.io/otel/metric"
 	"net/http"
 	"testing"
 
+	"go.opentelemetry.io/otel/metric"
+
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 
 	"github.com/stretchr/testify/assert"
 )

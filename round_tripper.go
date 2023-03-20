@@ -9,22 +9,22 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"go.opentelemetry.io/otel/metric/instrument"
+	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 )
 
 type otelHTTPMetrics struct {
-	attemptsCounter         syncint64.Counter
-	noRequestCounter        syncint64.Counter
-	errorsCounter           syncint64.Counter
-	successesCounter        syncint64.Counter
-	failureCounter          syncint64.Counter
-	redirectCounter         syncint64.Counter
-	timeoutsCounter         syncint64.Counter
-	canceledCounter         syncint64.Counter
-	deadlineExceededCounter syncint64.Counter
-	totalDurationCounter    syncint64.Histogram
-	inFlightCounter         syncint64.UpDownCounter
+	attemptsCounter         instrument.Int64Counter
+	noRequestCounter        instrument.Int64Counter
+	errorsCounter           instrument.Int64Counter
+	successesCounter        instrument.Int64Counter
+	failureCounter          instrument.Int64Counter
+	redirectCounter         instrument.Int64Counter
+	timeoutsCounter         instrument.Int64Counter
+	canceledCounter         instrument.Int64Counter
+	deadlineExceededCounter instrument.Int64Counter
+	totalDurationCounter    instrument.Int64Histogram
+	inFlightCounter         instrument.Int64UpDownCounter
 }
 
 // otelRoundTripper is the http.RoundTripper which emits open telemetry metrics
@@ -46,36 +46,36 @@ func New(options ...Option) http.RoundTripper {
 		parent:     cfg.parent,
 		attributes: cfg.attributes,
 		metrics: otelHTTPMetrics{
-			noRequestCounter:        mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".no_request")),
-			errorsCounter:           mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".errors")),
-			successesCounter:        mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".success")),
-			timeoutsCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".timeouts")),
-			canceledCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".cancelled")),
-			deadlineExceededCounter: mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".deadline_exceeded")),
-			totalDurationCounter:    mustHistogram(cfg.meter.SyncInt64().Histogram(cfg.name + ".total_duration")),
-			inFlightCounter:         mustUpDownCounter(cfg.meter.SyncInt64().UpDownCounter(cfg.name + ".in_flight")),
-			attemptsCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".attempts")),
-			failureCounter:          mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".failures")),
-			redirectCounter:         mustCounter(cfg.meter.SyncInt64().Counter(cfg.name + ".redirects")),
+			noRequestCounter:        mustCounter(cfg.meter.Int64Counter(cfg.name + ".no_request")),
+			errorsCounter:           mustCounter(cfg.meter.Int64Counter(cfg.name + ".errors")),
+			successesCounter:        mustCounter(cfg.meter.Int64Counter(cfg.name + ".success")),
+			timeoutsCounter:         mustCounter(cfg.meter.Int64Counter(cfg.name + ".timeouts")),
+			canceledCounter:         mustCounter(cfg.meter.Int64Counter(cfg.name + ".cancelled")),
+			deadlineExceededCounter: mustCounter(cfg.meter.Int64Counter(cfg.name + ".deadline_exceeded")),
+			totalDurationCounter:    mustHistogram(cfg.meter.Int64Histogram(cfg.name + ".total_duration")),
+			inFlightCounter:         mustUpDownCounter(cfg.meter.Int64UpDownCounter(cfg.name + ".in_flight")),
+			attemptsCounter:         mustCounter(cfg.meter.Int64Counter(cfg.name + ".attempts")),
+			failureCounter:          mustCounter(cfg.meter.Int64Counter(cfg.name + ".failures")),
+			redirectCounter:         mustCounter(cfg.meter.Int64Counter(cfg.name + ".redirects")),
 		},
 	}
 }
 
-func mustCounter(counter syncint64.Counter, err error) syncint64.Counter {
+func mustCounter(counter instrument.Int64Counter, err error) instrument.Int64Counter {
 	if err != nil {
 		panic(err)
 	}
 	return counter
 }
 
-func mustUpDownCounter(counter syncint64.UpDownCounter, err error) syncint64.UpDownCounter {
+func mustUpDownCounter(counter instrument.Int64UpDownCounter, err error) instrument.Int64UpDownCounter {
 	if err != nil {
 		panic(err)
 	}
 	return counter
 }
 
-func mustHistogram(histogram syncint64.Histogram, err error) syncint64.Histogram {
+func mustHistogram(histogram instrument.Int64Histogram, err error) instrument.Int64Histogram {
 	if err != nil {
 		panic(err)
 	}
