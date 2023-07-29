@@ -3,28 +3,27 @@ package otelroundtripper
 import (
 	"context"
 	"errors"
+	"go.opentelemetry.io/otel/attribute"
+	api "go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 	"net"
 	"net/http"
 	"strings"
 	"time"
-
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/instrument"
-	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 )
 
 type otelHTTPMetrics struct {
-	attemptsCounter         instrument.Int64Counter
-	noRequestCounter        instrument.Int64Counter
-	errorsCounter           instrument.Int64Counter
-	successesCounter        instrument.Int64Counter
-	failureCounter          instrument.Int64Counter
-	redirectCounter         instrument.Int64Counter
-	timeoutsCounter         instrument.Int64Counter
-	canceledCounter         instrument.Int64Counter
-	deadlineExceededCounter instrument.Int64Counter
-	totalDurationCounter    instrument.Int64Histogram
-	inFlightCounter         instrument.Int64UpDownCounter
+	attemptsCounter         api.Int64Counter
+	noRequestCounter        api.Int64Counter
+	errorsCounter           api.Int64Counter
+	successesCounter        api.Int64Counter
+	failureCounter          api.Int64Counter
+	redirectCounter         api.Int64Counter
+	timeoutsCounter         api.Int64Counter
+	canceledCounter         api.Int64Counter
+	deadlineExceededCounter api.Int64Counter
+	totalDurationCounter    api.Int64Histogram
+	inFlightCounter         api.Int64UpDownCounter
 }
 
 // otelRoundTripper is the http.RoundTripper which emits open telemetry metrics
@@ -61,21 +60,21 @@ func New(options ...Option) http.RoundTripper {
 	}
 }
 
-func mustCounter(counter instrument.Int64Counter, err error) instrument.Int64Counter {
+func mustCounter(counter api.Int64Counter, err error) api.Int64Counter {
 	if err != nil {
 		panic(err)
 	}
 	return counter
 }
 
-func mustUpDownCounter(counter instrument.Int64UpDownCounter, err error) instrument.Int64UpDownCounter {
+func mustUpDownCounter(counter api.Int64UpDownCounter, err error) api.Int64UpDownCounter {
 	if err != nil {
 		panic(err)
 	}
 	return counter
 }
 
-func mustHistogram(histogram instrument.Int64Histogram, err error) instrument.Int64Histogram {
+func mustHistogram(histogram api.Int64Histogram, err error) api.Int64Histogram {
 	if err != nil {
 		panic(err)
 	}
@@ -133,24 +132,24 @@ func (roundTripper *otelRoundTripper) failureHook(
 	ctx context.Context,
 	attributes []attribute.KeyValue,
 ) {
-	roundTripper.metrics.inFlightCounter.Add(ctx, -1, attributes...)
-	roundTripper.metrics.failureCounter.Add(ctx, 1, attributes...)
+	roundTripper.metrics.inFlightCounter.Add(ctx, -1, api.WithAttributes(attributes...))
+	roundTripper.metrics.failureCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 }
 
 func (roundTripper *otelRoundTripper) redirectHook(
 	ctx context.Context,
 	attributes []attribute.KeyValue,
 ) {
-	roundTripper.metrics.inFlightCounter.Add(ctx, -1, attributes...)
-	roundTripper.metrics.redirectCounter.Add(ctx, 1, attributes...)
+	roundTripper.metrics.inFlightCounter.Add(ctx, -1, api.WithAttributes(attributes...))
+	roundTripper.metrics.redirectCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 }
 
 func (roundTripper *otelRoundTripper) successHook(
 	ctx context.Context,
 	attributes []attribute.KeyValue,
 ) {
-	roundTripper.metrics.inFlightCounter.Add(ctx, -1, attributes...)
-	roundTripper.metrics.successesCounter.Add(ctx, 1, attributes...)
+	roundTripper.metrics.inFlightCounter.Add(ctx, -1, api.WithAttributes(attributes...))
+	roundTripper.metrics.successesCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 }
 
 func (roundTripper *otelRoundTripper) beforeHook(
@@ -158,10 +157,10 @@ func (roundTripper *otelRoundTripper) beforeHook(
 	attributes []attribute.KeyValue,
 	request *http.Request,
 ) {
-	roundTripper.metrics.inFlightCounter.Add(ctx, 1, attributes...)
-	roundTripper.metrics.attemptsCounter.Add(ctx, 1, attributes...)
+	roundTripper.metrics.inFlightCounter.Add(ctx, 1, api.WithAttributes(attributes...))
+	roundTripper.metrics.attemptsCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 	if request == nil {
-		roundTripper.metrics.noRequestCounter.Add(ctx, 1, attributes...)
+		roundTripper.metrics.noRequestCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 	}
 }
 
@@ -170,7 +169,7 @@ func (roundTripper *otelRoundTripper) afterHook(
 	duration int64,
 	attributes []attribute.KeyValue,
 ) {
-	roundTripper.metrics.totalDurationCounter.Record(ctx, duration, attributes...)
+	roundTripper.metrics.totalDurationCounter.Record(ctx, duration, api.WithAttributes(attributes...))
 }
 
 func (roundTripper *otelRoundTripper) responseAttributes(
@@ -194,16 +193,16 @@ func (roundTripper *otelRoundTripper) requestAttributes(request *http.Request) [
 }
 
 func (roundTripper *otelRoundTripper) errorHook(ctx context.Context, err error, attributes []attribute.KeyValue) {
-	roundTripper.metrics.inFlightCounter.Add(ctx, -1, attributes...)
-	roundTripper.metrics.errorsCounter.Add(ctx, 1, attributes...)
+	roundTripper.metrics.inFlightCounter.Add(ctx, -1, api.WithAttributes(attributes...))
+	roundTripper.metrics.errorsCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 
 	var timeoutErr net.Error
 	if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {
-		roundTripper.metrics.timeoutsCounter.Add(ctx, 1, attributes...)
+		roundTripper.metrics.timeoutsCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 	}
 
 	if strings.HasSuffix(err.Error(), context.Canceled.Error()) {
-		roundTripper.metrics.canceledCounter.Add(ctx, 1, attributes...)
+		roundTripper.metrics.canceledCounter.Add(ctx, 1, api.WithAttributes(attributes...))
 	}
 }
 

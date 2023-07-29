@@ -3,6 +3,7 @@ package otelroundtripper
 import (
 	"context"
 	"encoding/json"
+	"go.opentelemetry.io/otel"
 	"log"
 	"math/rand"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
-	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 )
@@ -30,7 +30,7 @@ func InstallExportPipeline(ctx context.Context) func() {
 		metric.WithReader(metric.NewPeriodicReader(exporter)),
 	)
 
-	global.SetMeterProvider(sdk)
+	otel.SetMeterProvider(sdk)
 
 	return func() {
 		if err := sdk.Shutdown(ctx); err != nil {
@@ -48,17 +48,17 @@ func Example() {
 
 	client := http.Client{
 		Transport: New(
-			WithMeter(global.MeterProvider().Meter("otel-round-tripper")),
+			WithMeter(otel.GetMeterProvider().Meter("otel-round-tripper")),
 			WithAttributes(
 				semconv.ServiceNameKey.String("otel-round-tripper"),
 			),
 		),
 	}
 
-	rand.Seed(time.Now().UnixNano())
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < 10; i++ {
 		// Add a random sleep duration so that we will see the metrics in the console
-		url := "https://httpstat.us/200?sleep=" + strconv.Itoa(rand.Intn(1000)+1000) //nolint:gosec
+		url := "https://httpstat.us/200?sleep=" + strconv.Itoa(random.Intn(1000)+1000) //nolint:gosec
 
 		log.Printf("GET: %s", url)
 		response, err := client.Get(url)

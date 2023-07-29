@@ -3,6 +3,7 @@ package otelroundtripper
 import (
 	"context"
 	"errors"
+	"go.opentelemetry.io/otel/metric/noop"
 	"io"
 	"net"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 		roundTripper := New(
 			WithName("name"),
 			WithParent(http.DefaultTransport),
-			WithMeter(metric.NewNoopMeter()),
+			WithMeter(noop.NewMeterProvider().Meter("http.client")),
 			WithAttributes([]attribute.KeyValue{semconv.ServiceNameKey.String("service")}...),
 		)
 		assert.NotNil(t, roundTripper)

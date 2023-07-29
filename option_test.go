@@ -1,10 +1,9 @@
 package otelroundtripper
 
 import (
+	"go.opentelemetry.io/otel/metric/noop"
 	"net/http"
 	"testing"
-
-	"go.opentelemetry.io/otel/metric"
 
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
@@ -82,7 +81,7 @@ func TestWithMeter(t *testing.T) {
 
 		// Arrange
 		cfg := defaultConfig()
-		meter := metric.NewNoopMeter()
+		meter := noop.NewMeterProvider().Meter("http.client")
 
 		// Act
 		WithMeter(meter).apply(cfg)
