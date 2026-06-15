@@ -186,6 +186,62 @@ func TestOtelRoundTripper_RoundTripWithDeadlineExceeded(t *testing.T) {
 	assert.Equal(t, int64(1), deadlineExceededSum, "expected deadline_exceeded counter to be 1")
 }
 
+func TestOtelRoundTripper_RoundTripWithNilRequest(t *testing.T) {
+	t.Parallel()
+
+	// use a real SDK meter with a manual reader so it can inspect emitted metrics
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	defer func() { _ = provider.Shutdown(context.Background()) }()
+
+	// Create a custom parent transport that handles nil requests
+	customParent := &mockRoundTripper{
+		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			if req == nil {
+				return nil, errors.New("nil request")
+			}
+			return &http.Response{StatusCode: http.StatusOK}, nil
+		},
+	}
+
+	roundTripper := New(
+		WithName("test"),
+		WithMeter(provider.Meter("test")),
+		WithParent(customParent),
+	).(*otelRoundTripper)
+
+	//call RoundTrip with nil request
+	_, _ = roundTripper.RoundTrip(nil) //nolint:bodyclose
+
+	// Collect all metrics from the SDK
+	var rm metricdata.ResourceMetrics
+	assert.Nil(t, reader.Collect(context.Background(), &rm))
+
+	// Find the no_request counter and assert it was incremented
+	var noRequestSum int64
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == "test.no_request" {
+				data, ok := m.Data.(metricdata.Sum[int64])
+				if ok {
+					for _, dp := range data.DataPoints {
+						noRequestSum += dp.Value
+					}
+				}
+			}
+		}
+	}
+	assert.Equal(t, int64(1), noRequestSum, "expected no_request counter to be 1")
+}
+
+type mockRoundTripper struct {
+	roundTripFunc func(*http.Request) (*http.Response, error)
+}
+
+func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return m.roundTripFunc(req)
+}
+
 // makeTestServer creates an api server for testing
 func makeTestServer(responseCode int, body string, delay int) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
