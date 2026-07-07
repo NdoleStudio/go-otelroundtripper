@@ -88,6 +88,60 @@ func TestOtelRoundTripper_RoundTripWithTimeout(t *testing.T) {
 	server.Close()
 }
 
+func TestOtelRoundTripper_RoundTripTimeoutMetric(t *testing.T) {
+	// Setup
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	defer func() { _ = provider.Shutdown(context.Background()) }()
+
+	// Arrange: parent transport that returns a net timeout error directly,
+	// making the test deterministic without relying on real network timing.
+	customParent := &mockRoundTripper{
+		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			return nil, &mockTimeoutError{msg: "request timed out"}
+		},
+	}
+
+	roundTripper := New(
+		WithName("test"),
+		WithMeter(provider.Meter("test")),
+		WithParent(customParent),
+	)
+
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
+	assert.Nil(t, err)
+
+	// Act
+	_, err = roundTripper.RoundTrip(req) //nolint:bodyclose
+
+	// Assert: the error must be a net timeout
+	assert.NotNil(t, err)
+	var timeoutErr net.Error
+	assert.True(t, errors.As(err, &timeoutErr) && timeoutErr.Timeout())
+
+	// Collect metrics
+	var rm metricdata.ResourceMetrics
+	assert.Nil(t, reader.Collect(context.Background(), &rm))
+
+	// Find the timeouts counter and assert it was incremented
+	var timeoutsSum int64
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == "test.timeouts" {
+				data, ok := m.Data.(metricdata.Sum[int64])
+				if ok {
+					for _, dp := range data.DataPoints {
+						timeoutsSum += dp.Value
+					}
+				}
+			}
+		}
+	}
+	assert.Equal(t, int64(1), timeoutsSum, "expected timeouts counter to be 1")
+}
+
 func TestOtelRoundTripper_RoundTripWithCancelledContext(t *testing.T) {
 	// Setup
 	t.Parallel()
@@ -241,6 +295,15 @@ type mockRoundTripper struct {
 func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m.roundTripFunc(req)
 }
+
+// mockTimeoutError is a net.Error that simulates a transport-level timeout.
+type mockTimeoutError struct {
+	msg string
+}
+
+func (e *mockTimeoutError) Error() string   { return e.msg }
+func (e *mockTimeoutError) Timeout() bool   { return true }
+func (e *mockTimeoutError) Temporary() bool { return false }
 
 // makeTestServer creates an api server for testing
 func makeTestServer(responseCode int, body string, delay int) *httptest.Server {
